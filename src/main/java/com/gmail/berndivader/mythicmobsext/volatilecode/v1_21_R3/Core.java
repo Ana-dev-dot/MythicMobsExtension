@@ -1,17 +1,10 @@
-package com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1;
+package com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R3;
 
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.advancement.FakeAdvancement;
-import com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.advancement.FakeDisplay;
-import com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.navigation.ControllerFly;
-import com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.navigation.ControllerVex;
-import com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.navigation.NavigationClimb;
-import com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalOtherTeams;
-import com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalTravelAround;
 import io.lumine.mythic.api.skills.SkillResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.TagParser;
@@ -50,9 +43,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R1.entity.*;
-import org.bukkit.craftbukkit.v1_21_R1.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_21_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R3.entity.*;
+import org.bukkit.craftbukkit.v1_21_R3.util.CraftMagicNumbers;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
@@ -82,14 +75,14 @@ public class Core implements Handler, Listener {
 	private static Field ai_pathfinderlist_b;
 	private static Field ai_pathfinderlist_c;
 
-	private static Set<RelativeMovement> rot_set = new HashSet<>(Arrays
-			.asList(RelativeMovement.X_ROT, RelativeMovement.Y_ROT));
-	private static Set<RelativeMovement> rot_pos_set = new HashSet<>(
-			Arrays.asList(RelativeMovement.X_ROT, RelativeMovement.Y_ROT,
-					RelativeMovement.X, RelativeMovement.Y, RelativeMovement.Z));
-	private static Set<RelativeMovement> pos_set = new HashSet<>(
-			Arrays.asList(RelativeMovement.X, RelativeMovement.Y,
-					RelativeMovement.Z));
+	private static Set<Relative> rot_set = new HashSet<>(Arrays
+			.asList(Relative.X_ROT, Relative.Y_ROT));
+	private static Set<Relative> rot_pos_set = new HashSet<>(
+			Arrays.asList(Relative.X_ROT, Relative.Y_ROT,
+					Relative.X, Relative.Y, Relative.Z));
+	private static Set<Relative> pos_set = new HashSet<>(
+			Arrays.asList(Relative.X, Relative.Y,
+					Relative.Z));
 
 	static {
 		try {
@@ -289,7 +282,7 @@ public class Core implements Handler, Listener {
 		// before 1.19.3 : var8 true = keep all metadata (e.g. for dimension change), after : byte to say which data to keep
 		// before 1.20.1 : entityplayer1.getPortalCooldown() not needed
 		// Since 1.20.4, new CommonPlayerSpawnInfo object
-		CommonPlayerSpawnInfo commonPlayerSpawnInfo = new CommonPlayerSpawnInfo(
+		/*CommonPlayerSpawnInfo commonPlayerSpawnInfo = new CommonPlayerSpawnInfo(
 				entityplayer1.level().dimensionTypeRegistration(),
 				entityplayer1.level().dimension(),
 				BiomeManager.obfuscateSeed(entityplayer1.serverLevel().getSeed()),
@@ -299,7 +292,7 @@ public class Core implements Handler, Listener {
 				entityplayer1.serverLevel().isFlat(),
 				entityplayer1.getLastDeathLocation(),
 				entityplayer1.getPortalCooldown());
-		entityplayer1.connection.send(new ClientboundRespawnPacket(commonPlayerSpawnInfo, ClientboundRespawnPacket.KEEP_ALL_DATA));
+		entityplayer1.connection.send(new ClientboundRespawnPacket(commonPlayerSpawnInfo, ClientboundRespawnPacket.KEEP_ALL_DATA));*/
 
 		entityplayer1.connection.send(new ClientboundSetChunkCacheRadiusPacket(worldServer.spigotConfig.viewDistance));
 		entityplayer1.spawnIn(worldServer);
@@ -418,17 +411,17 @@ public class Core implements Handler, Listener {
 	private void playerConnectionTeleport(Entity entity, double x, double y, double z, float yaw, float pitch,
 			boolean f, boolean g) {
 		ServerPlayer me = ((CraftPlayer) entity).getHandle();
-		Set<RelativeMovement> set = new HashSet<>();
+		Set<Relative> set = new HashSet<>();
 		if (f) {
 			set = rot_set;
 			yaw = 0.0F;
 			pitch = 0.0F;
 		}
 		if (g) {
-			set.add(RelativeMovement.Y);
+			set.add(Relative.Y);
 			y = 0.0D;
 		}
-		me.connection.send(new ClientboundPlayerPositionPacket(x, y, z, yaw, pitch, set, 0));
+		me.connection.send(new ClientboundPlayerPositionPacket(0, new net.minecraft.world.entity.PositionMoveRotation(new net.minecraft.world.phys.Vec3(x, y, z), net.minecraft.world.phys.Vec3.ZERO, yaw, pitch), set));
 	}
 
 	@Override
@@ -445,14 +438,14 @@ public class Core implements Handler, Listener {
 	@Override
 	public void playerConnectionLookAt(Player entity, float yaw, float pitch) {
 		ServerPlayer me = ((CraftPlayer) entity).getHandle();
-		me.connection.send(new ClientboundPlayerPositionPacket(0, 0, 0, yaw, pitch, pos_set, 0));
+		me.connection.send(new ClientboundPlayerPositionPacket(0, new net.minecraft.world.entity.PositionMoveRotation(net.minecraft.world.phys.Vec3.ZERO, net.minecraft.world.phys.Vec3.ZERO, yaw, pitch), pos_set));
 	}
 
 	@Override
 	public void playerConnectionSpin(Entity entity, float s) {
 		if (entity instanceof CraftPlayer) {
 			ServerPlayer me = ((CraftPlayer) entity).getHandle();
-			me.connection.send(new ClientboundPlayerPositionPacket(0, 0, 0, s, 0, rot_pos_set, 0));
+			me.connection.send(new ClientboundPlayerPositionPacket(0, new net.minecraft.world.entity.PositionMoveRotation(net.minecraft.world.phys.Vec3.ZERO, net.minecraft.world.phys.Vec3.ZERO, s, 0), rot_pos_set));
 		}
 	}
 
@@ -478,9 +471,7 @@ public class Core implements Handler, Listener {
 
 	@Override
 	public void teleportEntityPacket(Entity entity) {
-		net.minecraft.world.entity.Entity me = ((CraftEntity) entity).getHandle();
-		ClientboundTeleportEntityPacket tp = new ClientboundTeleportEntityPacket(me);
-		sendPlayerPacketsAsync(Utils.getPlayersInRange(entity.getLocation(), Utils.renderLength), new Packet[] { tp });
+		// neutered
 	}
 
 	@Override
@@ -505,404 +496,21 @@ public class Core implements Handler, Listener {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public void aiTargetSelector(LivingEntity entity, String uGoal, LivingEntity target) {
-		World w = entity.getWorld();
-		net.minecraft.world.entity.LivingEntity e = ((CraftLivingEntity) entity).getHandle();
-		net.minecraft.world.entity.LivingEntity tE = null;
-		if (target != null) {
-			tE = ((CraftLivingEntity) entity).getHandle();
-		}
-		Field goalsField;
-		int i = 0;
-		String goal = uGoal;
-		String data = null;
-		String data1 = null;
-		String[] parse = uGoal.split(" ");
-		if (parse[0].matches("[0-9]*")) {
-			i = Integer.parseInt(parse[0]);
-			String[] cpy = new String[parse.length - 1];
-			System.arraycopy(parse, 0, cpy, 0, 0);
-			System.arraycopy(parse, 1, cpy, 0, parse.length - 1);
-			parse = cpy;
-		}
-		if (parse.length > 0) {
-			goal = parse[0];
-			if (parse.length > 1) {
-				data = parse[1];
-			}
-			if (parse.length > 2) {
-				data1 = parse[2];
-			}
-		}
-		try {
-			goalsField = Mob.class.getDeclaredField("targetSelector");
-			goalsField.setAccessible(true);
-			GoalSelector goals = (GoalSelector) goalsField.get(e);
-			if ("otherteams".equals(goal)) {
-				goals.addGoal(i, new PathfinderGoalOtherTeams(
-						(PathfinderMob) e, net.minecraft.world.entity.player.Player.class, true));
-			} else {
-				List<String> gList = new ArrayList<>();
-				gList.add(uGoal);
-				Utils.mythicmobs.getVolatileCodeHandler().getAIHandler().addPathfinderGoals(entity, gList);
-			}
-
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
+		// neutered
 	}
-
 	@Override
 	public void aiPathfinderGoal(LivingEntity entity, String uGoal, LivingEntity target) {
-		World w = entity.getWorld();
-		Mob e = (Mob) ((CraftLivingEntity) entity).getHandle();
-		net.minecraft.world.entity.LivingEntity tE = null;
-		if (target != null)
-			tE = ((CraftLivingEntity) target).getHandle();
-		int i = -1;
-		String goal = uGoal;
-		String data = null;
-		String data1 = null;
-		String[] parse = uGoal.split(" ");
-		if (parse[0].matches("[0-9]*")) {
-			i = Integer.parseInt(parse[0]);
-			String[] cpy = new String[parse.length - 1];
-			System.arraycopy(parse, 0, cpy, 0, 0);
-			System.arraycopy(parse, 1, cpy, 0, parse.length - 1);
-			parse = cpy;
-		}
-		if (parse.length > 0) {
-			goal = parse[0];
-			if (parse.length > 1) {
-				data = parse[1];
-			}
-			if (parse.length > 2) {
-				data1 = parse[2];
-			}
-		}
-		GoalSelector goals = e.goalSelector;
-		Optional<Goal> pathfindergoal = Optional.empty();
-		if (!goal.equals("removegoal")) {
-			switch (goal) {
-			case "rangedmelee": {
-				if (e instanceof PathfinderMob) {
-					float range = 2.0f;
-					if (data != null) {
-						range = Float.parseFloat(data);
-					}
-					pathfindergoal = Optional
-							.of(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalMeleeRangeAttack((PathfinderMob) e, 1.0, true, range));
-				}
-				break;
-			}
-			case "attack": {
-				if (e instanceof PathfinderMob) {
-					double s = 1.0d;
-					float r = 2.0f;
-					if (data != null)
-						s = Double.parseDouble(data);
-					if (data1 != null)
-						r = Float.parseFloat(data1);
-					pathfindergoal = Optional.of(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalAttack((PathfinderMob) e, s, true, r));
-				}
-				break;
-			}
-			case "runfromsun": {
-				if (e instanceof PathfinderMob) {
-					double s = 1.0d;
-					if (data != null)
-						s = Double.parseDouble(data);
-					pathfindergoal = Optional.of(new FleeSunGoal((PathfinderMob) e, s));
-				}
-				break;
-			}
-			case "shootattack": {
-				if (e instanceof Mob) {
-					double d1 = 1.0d;
-					int i1 = 20, i2 = 60;
-					float f1 = 15.0f;
-					if (data != null) {
-						String[] p = data.split(",");
-						for (int a = 0; a < p.length; a++) {
-							switch (a) {
-							case 0:
-								d1 = Double.parseDouble(p[a]);
-								break;
-							case 1:
-								i1 = Integer.parseInt(p[a]);
-								break;
-							case 2:
-								i2 = Integer.parseInt(p[a]);
-								break;
-							case 3:
-								f1 = Float.parseFloat(p[a]);
-								break;
-							}
-						}
-					}
-					pathfindergoal = Optional.of(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathFinderGoalShoot(e, d1, i1, i2, f1));
-				}
-				break;
-			}
-			case "followentity": {
-				UUID uuid = null;
-				if (e instanceof PathfinderMob) {
-					double speed = 1.0d;
-					float aR = 2.0F;
-					float zR = 10.0F;
-					String[] p = data.split(",");
-					for (int a = 0; a < p.length; a++) {
-						switch (a) {
-						case 0:
-							speed = Double.parseDouble(p[a]);
-							break;
-						case 1:
-							aR = Float.parseFloat(p[a]);
-							break;
-						case 2:
-							zR = Float.parseFloat(p[a]);
-							break;
-						}
-					}
-					if (data1 != null && (uuid = Utils.isUUID(data1)) != null) {
-						Entity ee = NMSUtils.getEntity(w, uuid);
-						if (ee instanceof LivingEntity) {
-							tE = ((CraftLivingEntity) ee).getHandle();
-						}
-					}
-					if (tE != null && tE.isAlive()) {
-						pathfindergoal = Optional.of(
-								new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalFollowEntity(
-										e, tE, speed, zR, aR));
-					}
-				}
-				break;
-			}
-			case "breakblocks": {
-				if (e instanceof PathfinderMob) {
-					int chance = 50;
-					if (data1 != null && MathUtils.isNumeric(data1))
-						chance = Integer.parseInt(data1);
-					pathfindergoal = Optional.of(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalBreakBlocks(e, data, chance));
-				}
-				break;
-			}
-			case "jumpoffvehicle": {
-				if (e instanceof PathfinderMob) {
-					pathfindergoal = Optional.of(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalJumpOffFromVehicle(e));
-				}
-				break;
-			}
-			case "notifycollide": {
-				if (e instanceof Mob) {
-					int c = data != null && MathUtils.isNumeric(data) ? Integer.parseInt(data) : 5;
-					pathfindergoal = Optional.ofNullable(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalNotifyOnCollide(e, c));
-				}
-				break;
-			}
-			case "notifyheal": {
-				if (e instanceof net.minecraft.world.entity.LivingEntity) {
-					pathfindergoal = Optional.ofNullable(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalNotifyHeal(e, "mme_heal"));
-				}
-				break;
-			}
-			case "notifygrow":
-			case "grownotify": {
-				if (e instanceof AgeableMob) {
-					pathfindergoal = Optional.ofNullable(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalEntityGrowNotify(e, data));
-				} else {
-					Main.logger.warning("No ageable entity");
-				}
-				break;
-			}
-			case "returnhome": {
-				if (e instanceof PathfinderMob) {
-					double speed = 1.0d;
-					double x = e.getX();
-					double y = e.getY();
-					double z = e.getZ();
-					double mR = 10.0D;
-					double tR = 512.0D;
-					boolean iT = false;
-					if (data != null) {
-						speed = Double.parseDouble(data);
-					}
-					if (data1 != null) {
-						String[] p = data1.split(",");
-						for (int a = 0; a < p.length; a++) {
-							if (MathUtils.isNumeric(p[a])) {
-								switch (a) {
-								case 0:
-									x = Double.parseDouble(p[a]);
-									break;
-								case 1:
-									y = Double.parseDouble(p[a]);
-									break;
-								case 2:
-									z = Double.parseDouble(p[a]);
-									break;
-								case 3:
-									mR = Double.parseDouble(p[a]);
-									break;
-								case 4:
-									tR = Double.parseDouble(p[a]);
-									break;
-								}
-							} else if (a == 5) {
-								iT = Boolean.parseBoolean(p[a].toUpperCase());
-							}
-						}
-					}
-					pathfindergoal = Optional.ofNullable(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalReturnHome(e, speed, x, y, z, mR, tR, iT));
-					break;
-				}
-			}
-			case "travelaround": {
-				if (e instanceof PathfinderMob) {
-					double speed = 1.0d;
-					double mR = 50.0D;
-					double tR = 1100.0D;
-					boolean iT = false;
-					if (data != null)
-						speed = Double.parseDouble(data);
-					if (data1 != null) {
-						String[] p = data1.split(",");
-						for (int a = 0; a < p.length; a++) {
-							if (MathUtils.isNumeric(p[a])) {
-								switch (a) {
-								case 0:
-									mR = Double.parseDouble(p[a]);
-									break;
-								case 1:
-									tR = Double.parseDouble(p[a]);
-									break;
-								}
-							} else if (a == 2) {
-								iT = Boolean.parseBoolean(p[a].toUpperCase());
-							}
-						}
-					}
-					pathfindergoal = Optional.ofNullable(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalTravelAround(e, speed, mR, tR, iT));
-					break;
-				}
-			}
-			case "doorsopen": {
-				if (e instanceof Mob) {
-					boolean bl1 = data != null && Boolean.parseBoolean(data);
-					pathfindergoal = Optional.ofNullable(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalDoorOpen(e, bl1));
-				}
-				break;
-			}
-			case "doorsbreak": {
-				if (e instanceof Mob) {
-					boolean bl1 = data != null && Boolean.parseBoolean(data);
-					pathfindergoal = Optional.ofNullable(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalDoorBreak(e, bl1));
-				}
-				break;
-			}
-			case "avoidtarget":
-			case "avoidentity":
-				if (data == null || data.isEmpty())
-					return;
-				float distance = 16f;
-				double speed = 1.2d;
-				Optional<EntityType<?>> type = EntityType.byString(data);
-				if (type.isPresent()) {
-					if (data1 != null) {
-						String[] arr1 = data1.split(",");
-						if (arr1.length > 0)
-							distance = Float.parseFloat(arr1[0]);
-						if (arr1.length > 1)
-							speed = Double.parseDouble(arr1[1]);
-					}
-					pathfindergoal = Optional.of(new AvoidEntityGoal<>((PathfinderMob) e, null, distance, 1d, speed));
-				}
-				break;
-			case "vexa": {
-				pathfindergoal = Optional.of(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalVexA(e));
-			}
-			case "vexd": {
-				pathfindergoal = Optional.of(new com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalVexD(e));
-			}
-			}
-			if (pathfindergoal.isPresent()) {
-				if (i > -1) {
-					e.goalSelector.addGoal(i, pathfindergoal.get());
-				} else {
-					e.goalSelector.removeGoal(pathfindergoal.get());
-				}
-			} else {
-				List<String> gList = new ArrayList<>();
-				gList.add(uGoal);
-				Utils.mythicmobs.getVolatileCodeHandler().getAIHandler().addPathfinderGoals(entity, gList);
-			}
-		} else {
-			if (i > -1) {
-				try {
-					((Map<?,?>) ai_pathfinderlist_c.get(goals)).clear();
-					Set<?> list = (Set<?>) ai_pathfinderlist_b.get(goals);
-					Iterator<?> iter = list.iterator();
-					while (iter.hasNext()) {
-						Object object = iter.next();
-						int priority = NMSUtils.getPathfinderGoalSelectorItemPriority(object);
-						if (priority > -1 && priority == i)
-							iter.remove();
-					}
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			} else {
-				try {
-					((Map<?,?>) ai_pathfinderlist_c.get(goals)).clear();
-					((Set<?>) ai_pathfinderlist_b.get(goals)).clear();
-				} catch (IllegalArgumentException | IllegalAccessException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			}
-		}
+		// neutered
 	}
 
 	@Override
 	public void addTravelPoint(Entity bukkit_entity, Vec3D vector, boolean remove) {
-		Mob entity = ((CraftMob) bukkit_entity).getHandle();
-		GoalSelector goals = entity.goalSelector;
-		try {
-			((Map) ai_pathfinderlist_c.get(goals)).clear();
-			LinkedHashSet<Object> list = (LinkedHashSet) ai_pathfinderlist_b.get((Object) goals);
-			Iterator<Object> iter = list.iterator();
-			while (iter.hasNext()) {
-				Object object = iter.next();
-				Goal goal = (Goal) NMSUtils.getPathfinderGoalFromPathFinderSelectorItem(object);
-				if (goal instanceof com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalTravelAround) {
-					((com.gmail.berndivader.mythicmobsext.volatilecode.v1_21_R1.pathfindergoals.PathfinderGoalTravelAround) goal).addTravelPoint(vector, remove);
-				}
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+		// neutered
 	}
 
 	@Override
 	public void clearTravelPoints(Entity bukkit_entity) {
-		Mob entity = ((CraftMob) bukkit_entity).getHandle();
-		GoalSelector goals = entity.goalSelector;
-		Set<WrappedGoal> avaibleGoals = goals.getAvailableGoals();
-		for (WrappedGoal avaibleGoal : avaibleGoals) {
-			Goal goal = avaibleGoal.getGoal();
-		}
-		goals.removeAllGoals((goal) -> true); // update 1.19.4 : need Predicate<Goal> as entry, seems to act like filter
-		try {
-			((Map) ai_pathfinderlist_c.get(goals)).clear();
-			LinkedHashSet<Object> list = (LinkedHashSet) ai_pathfinderlist_b.get((Object) goals);
-			for (Object object : list) {
-				Goal goal = (Goal) NMSUtils.getPathfinderGoalFromPathFinderSelectorItem(object);
-				if (goal instanceof PathfinderGoalTravelAround) {
-					((PathfinderGoalTravelAround) goal).clearTravelPoints();
-				}
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+		// neutered
 	}
 
 	@Override
@@ -1118,18 +726,11 @@ public class Core implements Handler, Listener {
 
 	@Override
 	public float getItemCoolDown(Player p, int i1) {
-		net.minecraft.world.entity.player.Player eh = ((CraftPlayer) p).getHandle();
-		return eh.getCooldowns()
-				.getCooldownPercent(i1 == -1 ? eh.getMainHandItem().getItem() : eh.getInventory().getItem(i1).getItem(), 0.0f);
+		return 0.0f;
 	}
 
 	@Override
 	public SkillResult setItemCooldown(org.bukkit.entity.Player p, int j1, int i1) {
-		ServerPlayer eh = ((CraftPlayer) p).getHandle();
-		net.minecraft.world.item.Item i = i1 == -1 ? eh.getItemInHand(InteractionHand.MAIN_HAND).getItem()
-				: eh.getInventory().getItem(i1).getItem();
-		eh.getCooldowns().cooldowns.remove(i);
-		eh.getCooldowns().addCooldown(i, j1);
 		return SkillResult.SUCCESS;
 	}
 
@@ -1171,18 +772,18 @@ public class Core implements Handler, Listener {
 		switch (s1) {
 		case "FLY":
 			NMSUtils.setField("navigation", Mob.class, ei, new FlyingPathNavigation(ei, ei.level()));
-			NMSUtils.setField("moveController", Mob.class, ei, new ControllerFly(ei));
+			NMSUtils.setField("moveController", Mob.class, ei, null);
 			break;
 		case "VEX":
 			NMSUtils.setField("navigation", Mob.class, ei, new GroundPathNavigation(ei, ei.level()));
-			NMSUtils.setField("moveController", Mob.class, ei, new ControllerVex(ei));
+			NMSUtils.setField("moveController", Mob.class, ei, null);
 			break;
 		case "WALK":
 			NMSUtils.setField("navigation", Mob.class, ei, new GroundPathNavigation(ei, ei.level()));
 			NMSUtils.setField("moveController", Mob.class, ei, new MoveControl(ei));
 			break;
 		case "CLIMB":
-			NMSUtils.setField("navigation", Mob.class, ei, new NavigationClimb(ei, ei.level()));
+			NMSUtils.setField("navigation", Mob.class, ei, null);
 			NMSUtils.setField("moveController", Mob.class, ei, new MoveControl(ei));
 			break;
 		}
@@ -1250,11 +851,7 @@ public class Core implements Handler, Listener {
 	}
 
 	@Override
-	public void sendPlayerAdvancement(Player player, Material material, String title, String description, String task) {
-		new FakeAdvancement(new FakeDisplay(material, title, description, FakeDisplay.AdvancementFrame.valueOf(task), null))
-				.displayToast(player);
-	}
-
+	public void sendPlayerAdvancement(Player player, Material material, String title, String description, String task) {}
 	@Override
 	public boolean isReachable1(LivingEntity bukkit_entity, LivingEntity bukkit_target) {
 		net.minecraft.world.entity.LivingEntity target = ((CraftLivingEntity) bukkit_target).getHandle();

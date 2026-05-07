@@ -1,6 +1,6 @@
 package com.gmail.berndivader.mythicmobsext.compatibilitylib;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;

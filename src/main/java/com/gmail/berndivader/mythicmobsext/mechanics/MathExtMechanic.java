@@ -11,7 +11,7 @@ import io.lumine.mythic.api.skills.placeholders.PlaceholderString;
 import io.lumine.mythic.bukkit.BukkitAdapter;
 import io.lumine.mythic.core.mobs.ActiveMob;
 import io.lumine.mythic.core.skills.SkillExecutor;
-import io.lumine.mythic.core.skills.SkillMechanic;;
+import io.lumine.mythic.core.skills.SkillMechanic;
 import io.lumine.mythic.core.skills.SkillString;
 import io.lumine.mythic.core.skills.placeholders.parsers.PlaceholderStringImpl;
 import org.bukkit.Bukkit;

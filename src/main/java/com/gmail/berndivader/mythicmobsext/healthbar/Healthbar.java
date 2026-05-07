@@ -2,27 +2,24 @@ package com.gmail.berndivader.mythicmobsext.healthbar;
 
 import java.util.UUID;
 
-import com.gmail.berndivader.mythicmobsext.Main;
-import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
-import me.filoghost.holographicdisplays.api.hologram.Hologram;
-import me.filoghost.holographicdisplays.api.hologram.VisibilitySettings;
-import me.filoghost.holographicdisplays.api.hologram.line.TextHologramLine;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.TextDisplay;
+import org.bukkit.entity.Display.Billboard;
 import org.bukkit.util.Vector;
 
+import com.gmail.berndivader.mythicmobsext.Main;
 import com.gmail.berndivader.mythicmobsext.utils.math.MathUtils;
+
 
 public class Healthbar {
 
-	protected Hologram hologram;
+	protected TextDisplay display;
 	protected LivingEntity entity;
 	protected UUID uuid;
 	protected double offset, sOffset, fOffset;
 	protected String template;
-	protected TextHologramLine textline;
 	protected int showCounter, showCounterDefault;
 	protected boolean useOffset, iYaw;
 
@@ -36,7 +33,7 @@ public class Healthbar {
 
 	public Healthbar(LivingEntity entity, double offset, int showCounter, String l, double sOffset, double fOffset,
 			boolean ignoreYaw) {
-		hologram = HolographicDisplaysAPI.get(Main.getPlugin()).createHologram(entity.getLocation().add(0, offset, 0));
+		Location loc = entity.getLocation().add(0, offset, 0);
 
 		this.fOffset = fOffset;
 		this.sOffset = sOffset;
@@ -45,17 +42,14 @@ public class Healthbar {
 		if (this.useOffset) {
 			Vector soV = MathUtils.getSideOffsetVectorFixed(entity.getLocation().getYaw(), this.sOffset, this.iYaw);
 			Vector foV = MathUtils.getFrontBackOffsetVector(entity.getLocation().getDirection(), this.fOffset);
-			hologram.getPosition().add(soV.getX(), soV.getY(), soV.getZ());
-			hologram.getPosition().add(foV.getX(), foV.getY(), foV.getZ());
+			loc.add(soV).add(foV);
 		}
 		this.uuid = entity.getUniqueId();
 		HealthbarHandler.healthbars.put(this.uuid, this);
 		if (showCounter == -1) {
 			this.showCounterDefault = -1;
-			hologram.getVisibilitySettings().setGlobalVisibility(VisibilitySettings.Visibility.VISIBLE);
 		} else {
 			this.showCounterDefault = showCounter;
-			hologram.getVisibilitySettings().setGlobalVisibility(VisibilitySettings.Visibility.HIDDEN);
 		}
 		if (!l.contains("$h"))
 			l = "$h";
@@ -63,28 +57,38 @@ public class Healthbar {
 		this.entity = entity;
 		this.offset = offset;
 		this.showCounter = 0;
-		this.textline = hologram.getLines().appendText(this.composeHealthLine());
+
+		// Spawn TextDisplay entity
+		this.display = entity.getWorld().spawn(loc, TextDisplay.class, td -> {
+			td.setBillboard(Billboard.CENTER);
+			td.setSeeThrough(false);
+			td.setShadowed(true);
+			td.setDefaultBackground(false);
+			td.setBackgroundColor(org.bukkit.Color.fromARGB(100, 0, 0, 0));
+			td.setVisibleByDefault(showCounter == -1);
+		});
+		this.display.setText(this.composeHealthLine());
 	}
 
 	public void updateHealth() {
-		this.textline.setText(this.composeHealthLine());
+		if (display == null || display.isDead()) return;
+		this.display.setText(this.composeHealthLine());
 		if (this.showCounterDefault > -1) {
 			this.showCounter = this.showCounterDefault;
-			hologram.getVisibilitySettings().setGlobalVisibility(VisibilitySettings.Visibility.VISIBLE);
+			this.display.setVisibleByDefault(true);
 		}
 	}
 
 	public boolean update() {
-		if (hologram.isDeleted())
+		if (display == null || display.isDead())
 			return false;
 		Location l = this.entity.getLocation();
-		World w = l.getWorld();
 		double x = l.getX();
 		double y = l.getY();
 		double z = l.getZ();
 		if (this.showCounterDefault > -1) {
 			if (this.showCounter == 0) {
-				hologram.getVisibilitySettings().setGlobalVisibility(VisibilitySettings.Visibility.HIDDEN);
+				this.display.setVisibleByDefault(false);
 				this.showCounter = -1;
 			} else {
 				this.showCounter--;
@@ -96,7 +100,7 @@ public class Healthbar {
 			x += soV.getX() + foV.getX();
 			z += soV.getZ() + foV.getZ();
 		}
-		hologram.setPosition(w, x, y + this.offset, z);
+		this.display.teleport(new Location(l.getWorld(), x, y + this.offset, z));
 		return true;
 	}
 
@@ -108,7 +112,9 @@ public class Healthbar {
 
 	public void remove() {
 		HealthbarHandler.healthbars.remove(this.uuid);
-		hologram.delete();
+		if (display != null && !display.isDead()) {
+			display.remove();
+		}
 	}
 
 	public void changeDisplay(String display) {
@@ -158,4 +164,6 @@ public class Healthbar {
 			return line;
 		}
 	}
+
+
 }

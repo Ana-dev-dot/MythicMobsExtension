@@ -82,8 +82,8 @@ import com.gmail.berndivader.mythicmobsext.volatilecode.Volatile;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
-import think.rpgitems.item.ItemManager;
-import think.rpgitems.item.RPGItem;
+//import think.rpgitems.item.ItemManager;
+//import think.rpgitems.item.RPGItem;
 
 public class Utils implements Listener {
 	public static MythicBukkit mythicmobs;
@@ -463,9 +463,9 @@ public class Utils implements Listener {
 		target.setMetadata(meta_DAMAGECAUSE, new FixedMetadataValue(Main.getPlugin(), cause.toString()));
 		target.setMetadata("DamageStrict", new FixedMetadataValue(Main.getPlugin(), strict));
 		target.setMetadata(meta_MMRPGITEMDMG, new FixedMetadataValue(Main.getPlugin(), false));
-		if (!ignorearmor && Main.hasRpgItems && target instanceof Player) {
+		/*if (!ignorearmor && Main.hasRpgItems && target instanceof Player) {
 			damage = rpgItemPlayerHit((Player) target, damage);
-		}
+		}*/
 		if (am.getEntity().isPlayer() && ncp && NoCheatPlusSupport.isPresent()) {
 			NCPExemptionManager.exemptPermanently((Player) am.getEntity().getBukkitEntity(), CheckType.FIGHT);
 			target.setMetadata(meta_NCP, new FixedMetadataValue(Main.getPlugin(), true));
@@ -495,26 +495,25 @@ public class Utils implements Listener {
 	}
 
 	public static double rpgItemPlayerHit(Player p, double damage) {
-		ItemStack[] armour = p.getInventory().getArmorContents();
-		boolean useDamage = false;
-		for (ItemStack pArmour : armour) {
+		/*ItemStack[] armors = p.getInventory().getArmorContents();
+		double a = 0D;
+		for (ItemStack pArmour : armors) {
 			RPGItem pRItem = ItemManager.toRPGItem(pArmour).get();
 			if (pRItem == null)
 				continue;
-			boolean can;
-			if (!pRItem.isHitCostByDamage()) {
-				can = pRItem.consumeDurability(pArmour, pRItem.getHitCost());
-			} else {
-				can = pRItem.consumeDurability(pArmour, (int) (pRItem.getHitCost() * damage / 100d));
+			boolean hasItemArmor = pRItem.getArmor() > 0;
+			if (hasItemArmor) {
+				a += Math.round(pRItem.getArmor());
 			}
-			if (can && pRItem.getArmour() > 0) {
-				useDamage = true;
-				damage -= Math.round(damage * ((pRItem.getArmour()) / 100d));
+			boolean hasItemArmorPct = pRItem.getArmourAsPercentage();
+			if (hasItemArmorPct) {
+				a += Math.round(damage * (pRItem.getArmor() / 100D));
 			}
 		}
-		if (useDamage)
+		if (a > 0D)
 			p.setMetadata(meta_MMRPGITEMDMG, new FixedMetadataValue(Main.getPlugin(), true));
-		return MathUtils.round(damage, 3);
+		return Math.max(damage - a, 0D);*/
+		return damage;
 	}
 
 	public static LivingEntity getTargetedEntity(Player player, int range) {

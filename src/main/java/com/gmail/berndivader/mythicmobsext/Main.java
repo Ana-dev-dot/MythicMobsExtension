@@ -20,11 +20,11 @@ import com.gmail.berndivader.MythicPlayers.MythicPlayers;
 import com.gmail.berndivader.mythicmobsext.NMS.NMSUtils;
 import com.gmail.berndivader.mythicmobsext.backbags.BackBagHelper;
 import com.gmail.berndivader.mythicmobsext.bossbars.BossBars;
-import com.gmail.berndivader.mythicmobsext.cachedowners.CachedOwnerHandler;
+////import com.gmail.berndivader.mythicmobsext.cachedowners.CachedOwnerHandler;
 import com.gmail.berndivader.mythicmobsext.commands.VersionCommand;
 import com.gmail.berndivader.mythicmobsext.compatibility.disguise.LibsDisguisesSupport;
-import com.gmail.berndivader.mythicmobsext.compatibility.factions.FactionsSupport;
-import com.gmail.berndivader.mythicmobsext.compatibility.mobarena.MobArenaSupport;
+//import com.gmail.berndivader.mythicmobsext.compatibility.factions.FactionsSupport;
+//import com.gmail.berndivader.mythicmobsext.compatibility.mobarena.MobArenaSupport;
 import com.gmail.berndivader.mythicmobsext.compatibility.nocheatplus.NoCheatPlusSupport;
 import com.gmail.berndivader.mythicmobsext.compatibility.protocollib.ProtocolLibSupport;
 import com.gmail.berndivader.mythicmobsext.compatibility.quests.QuestsSupport;
@@ -50,7 +50,7 @@ public class Main extends JavaPlugin {
 	public static BukkitTaskManager taskManager;
 	public static PluginManager pluginmanager;
 	public static HealthbarHandler healthbarhandler;
-	public static CachedOwnerHandler cachedOwnerHandler;
+	////public static CachedOwnerHandler cachedOwnerHandler;
 	public static EntityCacheHandler entityCacheHandler;
 	public static Logger logger;
 	public static Random random;
@@ -128,19 +128,18 @@ public class Main extends JavaPlugin {
 			if (Config.wguard && pluginmanager.getPlugin("WorldGuard") != null)
 				new WorldGuardFlag();
 
-			if (Config.factions && pluginmanager.getPlugin("Factions") != null
+			/*if (Config.factions && pluginmanager.getPlugin("Factions") != null
 					&& pluginmanager.getPlugin("MassiveCore") != null)
-				new FactionsSupport();
+				new FactionsSupport();*/
 
-			if (Config.rpgitems && pluginmanager.getPlugin("RPGItems") != null) {
+			/*if (Config.rpgitems && pluginmanager.getPlugin("RPGItems") != null) {
 				hasRpgItems = true;
 				logger.info("using RPGItems");
-			}
+			}*/
+			/*if (Config.mobarena && pluginmanager.getPlugin("MobArena") != null)
+				new MobArenaSupport();*/
 
-			if (Config.mobarena && pluginmanager.getPlugin("MobArena") != null)
-				new MobArenaSupport();
-
-			if (Config.h_displays && pluginmanager.getPlugin("HolographicDisplays") != null)
+			if (Config.h_displays)
 				Main.healthbarhandler = new HealthbarHandler(this);
 
 			if (pluginmanager.getPlugin("ProtocolLib") != null) {
@@ -158,7 +157,7 @@ public class Main extends JavaPlugin {
 				new NoCheatPlusSupport(this);
 
 			if (Config.c_owners)
-				cachedOwnerHandler = new CachedOwnerHandler(plugin);
+				////cachedOwnerHandler = new CachedOwnerHandler(plugin);
 
 			entityCacheHandler = new EntityCacheHandler();
 			new VersionCommand(this);
@@ -189,12 +188,9 @@ public class Main extends JavaPlugin {
 			Main.healthbarhandler.removeHealthbars();
 			Main.healthbarhandler.removeSpeechBubbles();
 		}
-		if (Main.cachedOwnerHandler != null) {
-			CachedOwnerHandler.cleanUp();
-			CachedOwnerHandler.saveCachedOwners();
-		}
+		/* neutered */
 		Main.mythicplayers = null;
-		Main.cachedOwnerHandler = null;
+		//Main.cachedOwnerHandler = null;
 		pluginmanager.disablePlugin(this);
 	}
 

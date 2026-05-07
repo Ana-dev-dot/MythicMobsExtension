@@ -2,22 +2,18 @@ package com.gmail.berndivader.mythicmobsext.healthbar;
 
 import java.util.UUID;
 
-import com.gmail.berndivader.mythicmobsext.Main;
-import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
-import me.filoghost.holographicdisplays.api.hologram.Hologram;
-import me.filoghost.holographicdisplays.api.hologram.HologramLines;
-import me.filoghost.holographicdisplays.api.hologram.VisibilitySettings;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.entity.TextDisplay;
+import org.bukkit.entity.Display.Billboard;
 import org.bukkit.util.Vector;
 
 import com.gmail.berndivader.mythicmobsext.utils.math.MathUtils;
 
+
 public class SpeechBubble {
-	protected Hologram hologram;
+	protected TextDisplay display;
 	protected LivingEntity entity;
 	protected UUID uuid;
 	protected double offset;
@@ -42,47 +38,58 @@ public class SpeechBubble {
 
 	public SpeechBubble(LivingEntity entity, String s1, Location l1, double offset, int showCounter, String[] text,
 			double sOffset, double fOffset, boolean b1, int ll, boolean b2) {
-		hologram = HolographicDisplaysAPI.get(Main.getPlugin()).createHologram(l1);
 		this.id = s1;
 		this.ll = ll;
 		this.fOffset = fOffset;
 		this.sOffset = sOffset;
 		this.maxlines = -1;
 		this.useOffset = fOffset != 0d || sOffset != 0d;
+
+		Location spawnLoc = l1.clone();
 		if (this.useOffset && b1) {
 			Vector soV = MathUtils.getSideOffsetVectorFixed(entity.getLocation().getYaw(), this.sOffset, false);
 			Vector foV = MathUtils.getFrontBackOffsetVector(entity.getLocation().getDirection(), this.fOffset);
-			hologram.getPosition().add(soV.getX(), soV.getY(), soV.getZ());
-			hologram.getPosition().add(foV.getX(), foV.getY(), foV.getZ());
+			spawnLoc.add(soV).add(foV);
 		}
 		this.uc1 = b2;
 		this.uuid = entity.getUniqueId();
 		HealthbarHandler.speechbubbles.put(this.uuid.toString() + this.id, this);
 		this.counter = showCounter < 1 ? 60 : showCounter * 20;
-		hologram.getVisibilitySettings().setGlobalVisibility(VisibilitySettings.Visibility.VISIBLE);
 		this.counter = showCounter;
 		this.entity = entity;
 		this.offset = offset;
 		this.template = text;
+
+		// Spawn TextDisplay
+		this.display = entity.getWorld().spawn(spawnLoc, TextDisplay.class, td -> {
+			td.setBillboard(Billboard.CENTER);
+			td.setSeeThrough(false);
+			td.setShadowed(true);
+			td.setDefaultBackground(false);
+			td.setBackgroundColor(org.bukkit.Color.fromARGB(160, 0, 0, 0));
+			td.setVisibleByDefault(true);
+		});
 		lines();
 	}
 
 	public boolean update() {
-		if (hologram.isDeleted())
+		if (display == null || display.isDead())
 			return false;
 		Location l = this.entity.getLocation();
 		World w = l.getWorld();
 		double dx = l.getX();
 		double dy = l.getY();
 		double dz = l.getZ();
-		double do1 = (hologram.getLines().size() * 0.25) + (il1 * 0.5) + this.offset;
+		// Approximate line height offset similar to the old HD logic
+		int lineCount = this.template != null ? this.template.length : 1;
+		double do1 = (lineCount * 0.25) + (il1 * 0.5) + this.offset;
 		if (this.useOffset) {
 			Vector soV = MathUtils.getSideOffsetVectorFixed(entity.getLocation().getYaw(), this.sOffset, false);
 			Vector foV = MathUtils.getFrontBackOffsetVector(entity.getLocation().getDirection(), this.fOffset);
 			dx += soV.getX() + foV.getX();
 			dz += soV.getZ() + foV.getZ();
 		}
-		hologram.setPosition(w, dx, dy + do1, dz);
+		this.display.teleport(new Location(w, dx, dy + do1, dz));
 		if (uc1) {
 			this.counter--;
 			if (this.counter < 0)
@@ -93,30 +100,30 @@ public class SpeechBubble {
 
 	public void remove() {
 		HealthbarHandler.speechbubbles.remove(this.uuid.toString() + this.id);
-		hologram.delete();
+		if (display != null && !display.isDead()) {
+			display.remove();
+		}
 	}
 
 	public void lines() {
-		HologramLines lines = hologram.getLines();
-		lines.clear();
 		this.il1 = 0;
-		for (String l : this.template) {
-			if (l.contains("<additem.")) {
-				String a1, a3;
-				a1 = "<additem." + (a3 = l.split("<additem.")[1].split(">")[0]) + ">";
-				String[] a2 = (l.replace(a1, "<split>")).split("<split>");
-				if (a2.length > 0)
-					lines.appendText(a2[0]);
-				Material m1;
-				if ((m1 = Material.getMaterial(a3.toUpperCase())) != null) {
-					lines.appendItem(new ItemStack(m1));
-					il1++;
-				}
-				if (a2.length > 1)
-					lines.appendText(a2[1]);
-			} else {
-				lines.appendText(l);
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < this.template.length; i++) {
+			String line = this.template[i];
+			// Strip <additem.XXX> tags - TextDisplay can't render items inline,
+			// just show the material name as text instead
+			if (line.contains("<additem.")) {
+				String matName = line.split("<additem\\.")[1].split(">")[0];
+				line = line.replaceAll("<additem\\.[^>]+>", "[" + matName + "]");
+				il1++;
 			}
+			if (i > 0) sb.append("\n");
+			sb.append(line);
+		}
+		if (display != null && !display.isDead()) {
+			display.setText(sb.toString());
 		}
 	}
+
+
 }

@@ -1,12 +1,12 @@
 package com.gmail.berndivader.mythicmobsext.compatibilitylib;
 
 import net.minecraft.world.level.chunk.status.ChunkStatus;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.v1_21_R1.CraftChunk;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R3.CraftChunk;
+import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
@@ -415,7 +415,7 @@ public class NMSUtils {
 
         // Bukkit.getBukkitVersion() -> 1.21.1-R0.1-SNAPSHOT
         // With Paper : Bukkit.getServer().getClass().getName() -> org.bukkit.craftbukkit.CraftServer
-        // With Spigot: Bukkit.getServer().getClass().getName() -> org.bukkit.craftbukkit.v1_21_R1.CraftServer
+        // With Spigot: Bukkit.getServer().getClass().getName() -> org.bukkit.craftbukkit.v1_21_R3.CraftServer
         usingPaper = Bukkit.getServer().getClass().getName().split("\\.").length == 4;
 
         String[] versions = Bukkit.getBukkitVersion().split("-")[0].split("\\.");

@@ -28,12 +28,7 @@ public class ProtocolLibSupport {
 		core = this;
 		this.plugin = plugin;
 
-		try {
-			Class.forName("com.comphenix.protocol.injector.server.TemporaryPlayer");
-		} catch (ClassNotFoundException e) {
-			Main.logger.warning("Incompatible ProtocolLib found! Update to 4.4 or heigher.");
-			return;
-		}
+		/* TemporaryPlayer check removed for ProtocolLib 5.x compatibility */
 
 		ProtocolLibrary.getProtocolManager().addPacketListener(new PacketReader());
 		new GuardianBeam(plugin);

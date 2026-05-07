@@ -30,10 +30,10 @@ public class HealthbarHandler implements Listener {
 	static {
 		plugin = Main.getPlugin();
 		logger = Main.logger;
-		str_pluginName = "HolograpicDisplays";
+		str_pluginName = "TextDisplay (native)";
 		healthbars = new ConcurrentHashMap<UUID, Healthbar>();
 		speechbubbles = new ConcurrentHashMap<String, SpeechBubble>();
-		logger.info("using " + str_pluginName);
+		logger.info("Healthbar system using " + str_pluginName);
 	}
 
 	public HealthbarHandler(Plugin plugin) {
